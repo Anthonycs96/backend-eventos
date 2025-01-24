@@ -16,8 +16,8 @@ const app = express();
 // Configurar CORS
 app.use(cors({
     origin: [
-        "http://localhost:3000", // Dirección local
-        "http://192.168.0.104:3000" // Dirección de red
+        process.env.FRONTEND_URL, // Dirección local
+        process.env.FRONTEND_NETWORK_URL, // Dirección en la red
     ],
     credentials: true,
 }));
