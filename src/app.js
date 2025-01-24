@@ -7,6 +7,8 @@ import eventRoutes from "./routes/eventRoutes.js";
 import guestRoutes from './routes/guestRoutes.js';
 import whatsappRoutes from "./routes/whatsappRoutes.js";
 
+import "./models/index.js";
+
 dotenv.config(); // Cargar variables de entorno desde .env
 
 const app = express();
