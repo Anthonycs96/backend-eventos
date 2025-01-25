@@ -26,20 +26,28 @@ export const login = async (req, res, next) => {
     try {
         const { email, password } = req.body;
 
+        // Buscar usuario por email
         const user = await User.findOne({ where: { email } });
         if (!user) {
             return res.status(404).json({ message: "Usuario no encontrado" });
         }
 
+        // Comparar contraseñas
         const isValid = await bcrypt.compare(password, user.password);
         if (!isValid) {
             return res.status(401).json({ message: "Credenciales incorrectas" });
         }
 
+        // Generar token JWT
         const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "1d" });
-        res.status(200).json({ token });
+
+        // Respuesta con token e ID de usuario
+        res.status(200).json({
+            message: "Login exitoso",
+            userId: user.id,
+            token
+        });
     } catch (err) {
-        next(err); // Deja que el middleware global maneje errores no controlados
+        next(err); // Middleware global manejará errores no controlados
     }
 };
-
