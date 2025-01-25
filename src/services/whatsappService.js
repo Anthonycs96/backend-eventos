@@ -81,6 +81,19 @@ export const initializeWhatsAppForUser = (userId) => {
     return client;
 };
 
+// Cierra la sesión de WhatsApp para un usuario
+export const disconnectWhatsAppForUser = (userId) => {
+    const client = clients.get(userId);
+
+    if (!client) {
+        throw new Error("No hay un cliente de WhatsApp activo para este usuario.");
+    }
+
+    client.destroy(); // Cierra la conexión
+    clients.delete(userId); // Elimina el cliente del mapa
+    console.log(`Cliente de WhatsApp cerrado para el usuario ${userId}`);
+};
+
 // Envía un mensaje usando el cliente del usuario
 export const sendMessageForUser = async (userId, phone, text) => {
     const client = clients[userId];

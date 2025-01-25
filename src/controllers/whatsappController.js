@@ -1,4 +1,4 @@
-import { initializeWhatsAppForUser, sendMessageForUser } from "../services/whatsappService.js";
+import { initializeWhatsAppForUser, sendMessageForUser, disconnectWhatsAppForUser } from "../services/whatsappService.js";
 
 // Inicializa la sesión de WhatsApp para un usuario
 export const connectWhatsApp = async (req, res) => {
@@ -16,6 +16,24 @@ export const connectWhatsApp = async (req, res) => {
         res.status(500).json({ error: "Error al inicializar el cliente de WhatsApp." });
     }
 };
+
+// Desconecta la sesión de WhatsApp del usuario
+export const disconnectWhatsApp = async (req, res) => {
+    const { userId } = req.body;
+
+    if (!userId) {
+        return res.status(400).json({ error: "El userId es obligatorio." });
+    }
+
+    try {
+        disconnectWhatsAppForUser(userId);
+        res.status(200).json({ message: "Cliente de WhatsApp desconectado con éxito." });
+    } catch (err) {
+        console.error(`Error desconectando WhatsApp para el usuario ${userId}:`, err);
+        res.status(500).json({ error: "Error al desconectar el cliente de WhatsApp." });
+    }
+};
+
 
 // Envía un mensaje desde el cliente del usuario
 export const sendUserMessage = async (req, res) => {
