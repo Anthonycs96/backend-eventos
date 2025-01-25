@@ -1,24 +1,14 @@
 import pkg from "whatsapp-web.js";
 const { Client, LocalAuth, NoAuth } = pkg;
 
-import qrcode from "qrcode-terminal";
+import qrcode from "qrcode";
+import { io } from "../server.js"; // Importar io desde server.js
 import fs from "fs";
 import path from "path";
 
 const clients = {}; // Objeto para almacenar los clientes de cada usuario
 
-// Función para eliminar la carpeta de sesión de forma segura
-const deleteFolder = (folderPath) => {
-    try {
-        // Quitar el atributo "solo lectura"
-        fs.chmodSync(folderPath, 0o777); // Otorgar permisos completos
-        // Eliminar la carpeta
-        fs.rmSync(folderPath, { recursive: true, force: true });
-        console.log(`Carpeta eliminada correctamente: ${folderPath}`);
-    } catch (err) {
-        console.error(`Error al eliminar carpeta: ${err.message}`);
-    }
-};
+
 
 // Inicializa el cliente de WhatsApp para un usuario específico
 export const initializeWhatsAppForUser = (userId) => {
@@ -37,10 +27,17 @@ export const initializeWhatsAppForUser = (userId) => {
 
 
     // Evento: Generación del QR
-    client.on("qr", (qr) => {
+    client.on("qr", async (qr) => {
         console.log(`Generando QR para el usuario ${userId}`);
-        qrcode.generate(qr, { small: true });
+        try {
+            const qrBase64 = await qrcode.toDataURL(qr);
+            io.emit("qr", { userId, qr: qrBase64 }); // Emitir el QR al frontend
+            console.log(`QR emitido en formato Base64 para el usuario ${userId}`);
+        } catch (err) {
+            console.error("Error al generar el QR en Base64:", err);
+        }
     });
+
 
     // Evento: Cliente listo
     client.on("ready", () => {
