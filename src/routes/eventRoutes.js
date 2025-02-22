@@ -16,8 +16,9 @@ router.post("/", authMiddleware, createEvent);
 // Obtener todos los eventos
 router.get("/", authMiddleware, getEvents);
 
+
 // Obtener un evento por ID
-router.get("/:id", authMiddleware, getEventById);
+router.get("/:id", getEventById);
 
 // Actualizar un evento
 router.put("/:id", authMiddleware, updateEvent);

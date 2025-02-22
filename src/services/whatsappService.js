@@ -1,79 +1,62 @@
 import pkg from "whatsapp-web.js";
-const { Client, LocalAuth, NoAuth } = pkg;
-
+const { Client, LocalAuth } = pkg;
 import qrcode from "qrcode";
-import { io } from "../server.js"; // Importar io desde server.js
+import { io } from "../server.js";
 
-const clients = {}; // Objeto para almacenar los clientes de cada usuario
-const initializingClients = new Set(); // Seguimiento de clientes en proceso de inicialización
+const clients = {}; // Objeto con los clientes de WhatsApp por usuario
+const clientStatus = {}; // Estado de cada cliente
 
-// Inicializa el cliente de WhatsApp para un usuario específico
-export const initializeWhatsAppForUser = (userId) => {
-    if (clients[userId]) {
-        console.log(`Cliente de WhatsApp ya inicializado para el usuario ${userId}`);
+export const initializeWhatsAppForUser = async (userId) => {
+    if (clients[userId] && clientStatus[userId] === "connected") {
+        console.log(`WhatsApp ya conectado para ${userId}`);
+        io.emit("status", { userId, status: "connected" });
         return clients[userId];
     }
 
-    if (initializingClients.has(userId)) {
-        console.log(`Cliente de WhatsApp ya está en proceso de inicialización para el usuario ${userId}`);
-        return;
-    }
-
-    initializingClients.add(userId);
+    clientStatus[userId] = "initializing";
 
     const client = new Client({
-        authStrategy: new NoAuth(),
-        puppeteer: {
-            headless: true,
-            args: ["--no-sandbox", "--disable-setuid-sandbox"],
-        },
+        authStrategy: new LocalAuth({ clientId: userId }),
+        puppeteer: { headless: true, args: ["--no-sandbox", "--disable-setuid-sandbox"] },
     });
 
-    // Evento: Generación del QR
     client.on("qr", async (qr) => {
-        console.log(`Generando QR para el usuario ${userId}`);
-        try {
-            const qrBase64 = await qrcode.toDataURL(qr);
-            io.emit("qr", { userId, qr: qrBase64 });
-            console.log(`QR emitido en formato Base64 para el usuario ${userId}`);
-        } catch (err) {
-            console.error("Error al generar el QR en Base64:", err);
-        }
+        if (clientStatus[userId] === "connected") return;
+        console.log(`Generando QR para ${userId}`);
+        const qrBase64 = await qrcode.toDataURL(qr);
+        io.emit("qr", { userId, qr: qrBase64 });
     });
 
-    // Evento: Cliente listo
     client.on("ready", () => {
-        console.log(`WhatsApp listo para el usuario ${userId}`);
-        initializingClients.delete(userId);
+        console.log(`WhatsApp conectado para ${userId}`);
+        clientStatus[userId] = "connected";
+        io.emit("status", { userId, status: "connected" });
     });
 
-    // Evento: Autenticado
     client.on("authenticated", () => {
-        console.log(`WhatsApp autenticado para el usuario ${userId}`);
+        console.log(`WhatsApp autenticado para ${userId}`);
+        io.emit("status", { userId, status: "authenticated" });
     });
 
-    // Evento: Error de autenticación
-    client.on("auth_failure", (msg) => {
-        console.error(`Error de autenticación para el usuario ${userId}:`, msg);
-        initializingClients.delete(userId);
+    client.on("auth_failure", () => {
+        console.error(`Error de autenticación para ${userId}`);
+        clientStatus[userId] = "disconnected";
     });
 
-    // Evento: Cliente desconectado
     client.on("disconnected", async (reason) => {
-        console.log(`WhatsApp desconectado para el usuario ${userId}. Razón: ${reason}`);
+        console.log(`WhatsApp desconectado para ${userId}: ${reason}`);
+        clientStatus[userId] = "disconnected";
         delete clients[userId];
-        initializingClients.delete(userId);
 
         try {
             await client.destroy();
-            console.log(`Cliente de WhatsApp cerrado correctamente para el usuario ${userId}`);
         } catch (err) {
-            console.error(`Error al destruir el cliente para ${userId}: ${err.message}`);
+            console.error(`Error al destruir sesión de ${userId}: ${err.message}`);
         }
 
         if (reason === "LOGOUT") {
-            console.log("Reiniciando cliente después del LOGOUT...");
-            initializeWhatsAppForUser(userId);
+            console.log(`Reiniciando sesión de ${userId}...`);
+            setTimeout(() => initializeWhatsAppForUser(userId), 5000);
         }
     });
 
@@ -83,47 +66,37 @@ export const initializeWhatsAppForUser = (userId) => {
     return client;
 };
 
-// Cierra la sesión de WhatsApp para un usuario
-export const disconnectWhatsAppForUser = (userId) => {
+// Desconectar WhatsApp de un usuario
+export const disconnectWhatsAppForUser = async (userId) => {
     const client = clients[userId];
 
     if (!client) {
-        throw new Error("No hay un cliente de WhatsApp activo para este usuario.");
+        throw new Error("No hay una sesión activa para este usuario.");
     }
 
-    client.destroy(); // Cierra la conexión
-    delete clients[userId]; // Elimina el cliente del objeto
-    console.log(`Cliente de WhatsApp cerrado para el usuario ${userId}`);
+    await client.logout();
+    await client.destroy();
+    delete clients[userId];
+    clientStatus[userId] = "disconnected";
+    io.emit("status", { userId, status: "disconnected" });
 };
 
-// Envía un mensaje usando el cliente del usuario
+// Enviar mensaje de WhatsApp
 export const sendMessageForUser = async (userId, phone, text) => {
-    const client = clients[userId];
+    let client = clients[userId];
 
-    if (!client) {
-        throw new Error(`Cliente de WhatsApp no inicializado para el usuario ${userId}`);
+    if (!client || clientStatus[userId] !== "connected") {
+        client = await initializeWhatsAppForUser(userId);
     }
 
-    const maxRetries = 3; // Número máximo de intentos
-    let attempt = 0;
-
-    while (attempt < maxRetries) {
-        try {
-            if (!client.info) {
-                throw new Error(`Cliente de WhatsApp no está listo para el usuario ${userId}`);
-            }
-
-            await client.sendMessage(`${phone}@c.us`, text);
-            console.log(`Mensaje enviado a ${phone} por el usuario ${userId}`);
-            return;
-        } catch (err) {
-            attempt++;
-            console.error(`Intento ${attempt} fallido para enviar mensaje: ${err.message}`);
-            if (attempt >= maxRetries) {
-                throw new Error(`Error enviando mensaje después de ${maxRetries} intentos para el usuario ${userId}`);
-            }
-
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-        }
+    try {
+        await client.sendMessage(`${phone}@c.us`, text);
+        console.log(`Mensaje enviado a ${phone} desde ${userId}`);
+    } catch (err) {
+        console.error(`Error enviando mensaje para ${userId}: ${err.message}`);
+        throw err;
     }
 };
+
+// ✅ Exportamos `clientStatus` para que pueda usarse en `whatsappController.js`
+export { clients, clientStatus };

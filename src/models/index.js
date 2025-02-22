@@ -3,22 +3,28 @@ import User from "./user.js";
 import Event from "./event.js";
 import Guest from "./guest.js";
 import Message from "./message.js";
+import EventUser from "./eventUser.js";
 
-// Relación: Un usuario puede crear muchos eventos
-User.hasMany(Event, { foreignKey: "userId", onDelete: "CASCADE" });
-Event.belongsTo(User, { foreignKey: "userId" });
+Event.hasMany(EventUser, { foreignKey: "eventId", as: "eventUsers" });
+EventUser.belongsTo(Event, { foreignKey: "eventId" });
 
-// Relación: Un evento tiene muchos invitados
-Event.hasMany(Guest, { foreignKey: "eventId", onDelete: "SET NULL", onUpdate: "CASCADE" });
+User.hasMany(EventUser, { foreignKey: "userId", as: "userEvents" });
+EventUser.belongsTo(User, { foreignKey: "userId" });
+
+
+Event.hasMany(Guest, { foreignKey: "eventId" });
 Guest.belongsTo(Event, { foreignKey: "eventId" });
 
-// Relación: Un invitado puede tener muchos mensajes
-Guest.hasMany(Message, { foreignKey: "guestId", onDelete: "CASCADE" });
+Guest.hasMany(Message, { foreignKey: "guestId" });
 Message.belongsTo(Guest, { foreignKey: "guestId" });
 
-// Sincronización de modelos con la base de datos
-sequelize.sync({ alter: true }).then(() => {
-    console.log("Base de datos sincronizada.");
-});
+// Sincronización de la base de datos (¡usar migraciones en producción!):
+sequelize.sync({ alter: true }) // SOLO PARA DESARROLLO
+    .then(() => {
+        console.log("Base de datos sincronizada.");
+    })
+    .catch((error) => {
+        console.error("Error al sincronizar la base de datos:", error);
+    });
 
-export { sequelize, User, Event, Guest, Message };
+export { sequelize, User, Event, Guest, Message, EventUser };

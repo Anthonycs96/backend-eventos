@@ -45,7 +45,8 @@ const sequelize = new Sequelize(process.env.DATABASE_URL, {
             rejectUnauthorized: false, // Permitir certificados autofirmados
         },
     },
-    logging: console.log,   // Opcional: logs de Sequelize
+    // logging: console.log,   // Opcional: logs de Sequelize
+    logging: false,   // Opcional: logs de Sequelize
 });
 
 // Probar la conexión

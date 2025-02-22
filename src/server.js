@@ -17,7 +17,7 @@ const io = new Server(server, {
             process.env.FRONTEND_URL, // Frontend local
             process.env.FRONTEND_NETWORK_URL, // Dirección en red
         ],
-        methods: ["GET", "POST"],
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH ', 'OPTIONS'], // Permitir métodos necesarios
     },
 });
 
@@ -37,5 +37,5 @@ export { io };
 
 // Iniciar el servidor HTTP
 server.listen(PORT, () => {
-    console.log(`Servidor escuchando en ${`http://192.168.0.104:${PORT}`}`);
+    console.log(`Servidor escuchando en ${process.env.BACKEND_NETWORK_URL + `:${PORT}`}`);
 });
