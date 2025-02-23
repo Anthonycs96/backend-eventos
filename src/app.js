@@ -17,7 +17,6 @@ const app = express();
 // Configurar CORS
 app.use(cors({
     origin: [
-        process.env.FRONTEND_URL, // Dirección local
         process.env.FRONTEND_NETWORK_URL, // Dirección en la red
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Permitir métodos necesarios
