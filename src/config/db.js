@@ -36,15 +36,19 @@ import dotenv from 'dotenv';
 // Carga las variables de entorno desde el archivo .env
 dotenv.config();
 
+// Convertir el valor de USE_SSL en un booleano
+const useSSL = process.env.USE_SSL === 'true';
+
 // Configuración de la conexión con la URL
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
     dialect: 'mysql',       // Indica que usas MySQL
-    dialectOptions: {
-        ssl: {
-            require: true,  // Asegúrate de usar SSL
-            rejectUnauthorized: false, // Permitir certificados autofirmados
-        },
-    },
+    dialectOptions: useSSL ?
+        {
+            ssl: {
+                require: true,  // Asegúrate de usar SSL
+                rejectUnauthorized: false, // Permitir certificados autofirmados
+            },
+        } : {},
     // logging: console.log,   // Opcional: logs de Sequelize
     logging: false,   // Opcional: logs de Sequelize
 });

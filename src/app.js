@@ -14,34 +14,43 @@ dotenv.config(); // Cargar variables de entorno desde .env
 
 const app = express();
 
-// Configurar CORS
+// Configuración de CORS para múltiples orígenes
+const allowedOrigins = [
+    process.env.FRONTEND_URL,         // http://localhost:3000
+    process.env.FRONTEND_NETWORK_URL  // http://192.168.0.102:3000
+];
+
 app.use(cors({
-    origin: [
-        process.env.FRONTEND_NETWORK_URL, // Dirección en la red
-    ],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Permitir métodos necesarios
-    credentials: true, // Permitir envío de cookies o credenciales
-    allowedHeaders: ['Content-Type', 'Authorization'], // Permitir headers necesarios
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error("No permitido por CORS"));
+        }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Métodos permitidos
+    credentials: true, // Permitir cookies y credenciales
+    allowedHeaders: ['Content-Type', 'Authorization'], // Headers permitidos
 }));
 
 // Middleware para parsear JSON
 app.use(express.json());
 
-// Middleware para manejo de errores
+// Middleware para manejar errores
 app.use((err, req, res, next) => {
-    console.error("Error:", err); // Imprime el error completo en la  consola
+    console.error("Error:", err); // Imprime el error en la consola
     res.status(err.status || 500).json({
         message: err.message || "Ocurrió un error en el servidor",
-        error: process.env.NODE_ENV === "development" ? err.stack : {}, // Mostrar detalles solo en desarrollo
+        error: process.env.NODE_ENV === "development" ? err.stack : {},
     });
 });
 
 // Rutas de la API
-app.use("/api/auth", authRoutes); // Rutas de autenticación
-app.use("/api/events", eventRoutes); // Rutas para eventos
-app.use("/api/eventUser", eventUserRoutes); // Rutas para eventos
-app.use('/api/guest', guestRoutes); // Rutas para invitados
-app.use("/api/whatsapp", whatsappRoutes); // Rutas para WhatsApp
+app.use("/api/auth", authRoutes);
+app.use("/api/events", eventRoutes);
+app.use("/api/eventUser", eventUserRoutes);
+app.use('/api/guest', guestRoutes);
+app.use("/api/whatsapp", whatsappRoutes);
 
 // Middleware para manejar solicitudes preflight (OPTIONS)
 app.options('*', (req, res) => {
