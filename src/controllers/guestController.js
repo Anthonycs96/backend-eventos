@@ -108,10 +108,15 @@ export const getGuestById = async (req, res) => {
 };
 
 // Actualizar un invitado dinámicamente
+// Actualizar un invitado dinámicamente
 export const updateGuest = async (req, res) => {
     try {
         const { id } = req.params;
-        const updatedFields = req.body; // Todo lo que llega del frontend
+        const updatedFields = req.body;
+
+        if (!id) {
+            return res.status(400).json({ message: "ID del invitado es requerido" });
+        }
 
         const guest = await Guest.findByPk(id);
 
@@ -122,10 +127,11 @@ export const updateGuest = async (req, res) => {
         // Actualizar solo los campos que vienen en el req.body
         await guest.update(updatedFields);
 
-        // Emitir un evento para actualización en tiempo real si es necesario
-        io.emit("guest_Updated", guest);
+        // Emitir evento de actualización al frontend con el nombre correcto
+        const updatedGuest = guest.toJSON();
+        io.emit("update_Guest", updatedGuest);
 
-        res.status(200).json({ message: "Guest updated", guest });
+        res.status(200).json({ message: "Guest updated successfully", guest: updatedGuest });
     } catch (err) {
         console.error("Error al actualizar el invitado:", err);
         res.status(500).json({ error: err.message });

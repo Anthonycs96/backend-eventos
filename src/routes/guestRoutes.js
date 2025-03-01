@@ -16,12 +16,10 @@ router.post("/", createGuest);
 router.get("/:eventId", getGuests);
 
 // Obtener un invitado específico
-router.get("/guest/:id", getGuestById);
+router.get("/consultar/:id", getGuestById);
 
 // Actualizar un invitado
-router.put("/guest/:id", updateGuest);
-// Actualizar un invitado
-router.put("/guestarjeta/:id", updateGuest);
+router.put("/:id", updateGuest);
 
 // Eliminar un invitado
 router.delete("/delete/:id", deleteGuest);
