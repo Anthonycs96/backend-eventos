@@ -186,8 +186,6 @@ export const confirmAssistance = async (req, res) => {
             }
         });
 
-        // Cambiar el estado a "confirmed"
-        guest.status = "confirmed";
 
         // Guarda los cambios en la base de datos
         await guest.save();
