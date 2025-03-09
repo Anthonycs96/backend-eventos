@@ -199,5 +199,49 @@ export const confirmAssistance = async (req, res) => {
     }
 };
 
+// Obtener estadísticas de los invitados del evento
+export const getEventGuestStats = async (req, res) => {
+    try {
+        const { eventId } = req.params;
+
+        // Obtener todos los invitados de ese evento
+        const guests = await Guest.findAll({ where: { eventId } });
+
+        // Contar el total de invitados registrados
+        const totalGuests = guests.length;
+
+        // Filtrar invitados confirmados y pendientes
+        const confirmedGuests = guests.filter(g => g.status === "confirmed");
+        const pendingGuests = guests.filter(g => g.status === "pending");
+
+        // Contar total de acompañantes confirmados (de invitados confirmados)
+        const totalConfirmedAccompanying = confirmedGuests.reduce((sum, g) => sum + (g.numberOfGuests || 0), 0);
+
+        // Contar total de acompañantes pendientes (de invitados que aún no han confirmado)
+        const totalPendingAccompanying = pendingGuests.reduce((sum, g) => sum + (g.numberOfGuests || 0), 0);
+
+        // Total de personas confirmadas (invitados confirmados + sus acompañantes)
+        const totalConfirmedWithAccompanying = confirmedGuests.length + totalConfirmedAccompanying;
+
+        // Total de personas pendientes (invitados pendientes + sus acompañantes)
+        const totalPendingWithAccompanying = pendingGuests.length + totalPendingAccompanying;
+
+        res.status(200).json({
+            totalGuests,
+            totalConfirmedGuests: confirmedGuests.length,
+            totalConfirmedAccompanying,
+            totalConfirmedWithAccompanying,
+            totalPendingGuests: pendingGuests.length,
+            totalPendingAccompanying,
+            totalPendingWithAccompanying,
+        });
+    } catch (err) {
+        console.error("Error al obtener estadísticas de los invitados:", err);
+        res.status(500).json({ error: "Error al obtener estadísticas" });
+    }
+};
+
+
+
 
 

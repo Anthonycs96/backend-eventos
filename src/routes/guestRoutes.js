@@ -4,7 +4,7 @@ import {
     getGuests,
     getGuestById,
     updateGuest,
-    deleteGuest, confirmAssistance
+    deleteGuest, confirmAssistance, getEventGuestStats
 } from "../controllers/guestController.js";
 
 const router = express.Router();
@@ -20,6 +20,8 @@ router.get("/consultar/:id", getGuestById);
 
 // Actualizar un invitado
 router.put("/:id", updateGuest);
+
+router.get("/event/:eventId/stats", getEventGuestStats);
 
 // Eliminar un invitado
 router.delete("/delete/:id", deleteGuest);
