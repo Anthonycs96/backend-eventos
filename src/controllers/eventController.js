@@ -82,6 +82,9 @@ export const updateEvent = async (req, res) => {
         // Actualizar dinámicamente los campos
         await event.update(updateData);
 
+        // Emitir evento de actualización
+        io.emit("update_Guest", event);
+
         res.status(200).json({ message: "Evento actualizado", event });
     } catch (err) {
         console.error("Error al actualizar el evento:", err);
