@@ -210,9 +210,10 @@ export const getEventGuestStats = async (req, res) => {
         // Contar el total de invitados registrados
         const totalGuests = guests.length;
 
-        // Filtrar invitados confirmados y pendientes
+        // Filtrar invitados según su estado
         const confirmedGuests = guests.filter(g => g.status === "confirmed");
         const pendingGuests = guests.filter(g => g.status === "pending");
+        const declinedGuests = guests.filter(g => g.status === "declined"); // Invitados que rechazaron la invitación
 
         // Contar total de acompañantes confirmados (de invitados confirmados)
         const totalConfirmedAccompanying = confirmedGuests.reduce((sum, g) => sum + (g.numberOfGuests || 0), 0);
@@ -220,11 +221,17 @@ export const getEventGuestStats = async (req, res) => {
         // Contar total de acompañantes pendientes (de invitados que aún no han confirmado)
         const totalPendingAccompanying = pendingGuests.reduce((sum, g) => sum + (g.numberOfGuests || 0), 0);
 
+        // Contar total de acompañantes rechazados (de invitados que rechazaron la invitación)
+        const totalDeclinedAccompanying = declinedGuests.reduce((sum, g) => sum + (g.numberOfGuests || 0), 0);
+
         // Total de personas confirmadas (invitados confirmados + sus acompañantes)
         const totalConfirmedWithAccompanying = confirmedGuests.length + totalConfirmedAccompanying;
 
         // Total de personas pendientes (invitados pendientes + sus acompañantes)
         const totalPendingWithAccompanying = pendingGuests.length + totalPendingAccompanying;
+
+        // Total de personas rechazadas (invitados rechazados + sus acompañantes)
+        const totalDeclinedWithAccompanying = declinedGuests.length + totalDeclinedAccompanying;
 
         res.status(200).json({
             totalGuests,
@@ -234,14 +241,12 @@ export const getEventGuestStats = async (req, res) => {
             totalPendingGuests: pendingGuests.length,
             totalPendingAccompanying,
             totalPendingWithAccompanying,
+            totalDeclinedGuests: declinedGuests.length, // Total de invitados rechazados
+            totalDeclinedAccompanying, // Total de acompañantes de los invitados rechazados
+            totalDeclinedWithAccompanying, // Total de personas que rechazaron la invitación (invitados + acompañantes)
         });
     } catch (err) {
         console.error("Error al obtener estadísticas de los invitados:", err);
         res.status(500).json({ error: "Error al obtener estadísticas" });
     }
 };
-
-
-
-
-
