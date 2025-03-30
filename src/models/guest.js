@@ -28,7 +28,12 @@ const Guest = sequelize.define(
         tableNumber: { type: DataTypes.INTEGER, allowNull: true },
         personalMessage: { type: DataTypes.TEXT, allowNull: true },
         type: {
-            type: DataTypes.ENUM("principal", "familiar", "familia novio", "familia novia", "amigo novio", "amigo novia", "amigo", "proveedor"),
+            type: DataTypes.ENUM("principal", "familiar", "amigo", "proveedor"),
+            allowNull: true,  // ✅ Permitir valores null
+            defaultValue: null,  // ✅ Evitar que se asigne "amigo" automáticamente
+        },
+        invitadoDe: {
+            type: DataTypes.ENUM("novio", "novia"),
             allowNull: true,  // ✅ Permitir valores null
             defaultValue: null,  // ✅ Evitar que se asigne "amigo" automáticamente
         },
