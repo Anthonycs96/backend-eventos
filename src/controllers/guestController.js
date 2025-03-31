@@ -233,8 +233,14 @@ export const getEventGuestStats = async (req, res) => {
         // Total de personas rechazadas (invitados rechazados + sus acompañantes)
         const totalDeclinedWithAccompanying = declinedGuests.length + totalDeclinedAccompanying;
 
+        // Total de personas invitadas (invitados + sus acompañantes)
+        const totalInvited = totalGuests +
+            totalConfirmedAccompanying +
+            totalPendingAccompanying +
+            totalDeclinedAccompanying;
         res.status(200).json({
             totalGuests,
+            totalInvited,
             totalConfirmedGuests: confirmedGuests.length,
             totalConfirmedAccompanying,
             totalConfirmedWithAccompanying,
